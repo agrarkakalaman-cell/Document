@@ -15,7 +15,7 @@ TEXTS = {
     "kk": {
         "page_title": "Құжат сапасын бақылау",
         "description": "Word құжатын жүктеңіз. Қосымша оны таңдалған рәсімдеу талаптарына сәйкес өңдейді.",
-        "settings_title": "Талаптарды сандармен<br>енгізіңіз:",
+        "settings_title": "Талаптарды енгізіңіз:",
         "title_settings": "Титулка деректері",
         "document_type": "Құжат түрі",
         "topic": "Тақырыбы",
@@ -61,7 +61,7 @@ TEXTS = {
     "ru": {
         "page_title": "Нормоконтроль документов",
         "description": "Загрузите Word-документ. Приложение приведет его к выбранным стандартам оформления.",
-        "settings_title": "Введите требования в<br>цифрах:",
+        "settings_title": "Введите требования:",
         "title_settings": "Данные титульного листа",
         "document_type": "Тип документа",
         "topic": "Тема",
@@ -357,13 +357,13 @@ def print_pdf_button(preview_html, button_text, disabled=False):
 # CSS Стильдер
 st.markdown(f"""
 <style>
-.block-container {{ padding-top: 34px; padding-left: 34px; padding-right: 34px; max-width: 1050px; }}
+.block-container {{ padding-top: 34px; padding-left: 34px; padding-right: 34px; max-width: 1400px; }}
 .header-title {{ font-size: 24px; font-weight: 700; text-align: center; margin-top: 20px; margin-bottom: 14px; }}
 .description-text {{ font-size: 16px; margin-bottom: 34px; }}
-.right-title {{ font-size: 18px; line-height: 1.45; margin-top: 15px; margin-bottom: 18px; font-weight: 600; border-top: 1px solid #eee; padding-top: 15px; }}
-.title-subtitle {{ font-size: 16px; font-weight: 700; margin-top: 0px; margin-bottom: 14px; }}
+.right-title {{ font-size: 16px; line-height: 1.45; margin-top: 0px; margin-bottom: 14px; font-weight: 700; color: #1f2937; }}
+.title-subtitle {{ font-size: 16px; font-weight: 700; margin-top: 0px; margin-bottom: 14px; color: #1f2937; }}
 .docx-preview {{
-    width: 100%; height: 680px; border: 5px solid #f1f3f6; background-color: white; box-sizing: border-box;
+    width: 100%; height: 750px; border: 5px solid #f1f3f6; background-color: white; box-sizing: border-box;
     margin-top: 12px; margin-bottom: 16px;
     padding-top: {DEFAULT_SETTINGS["top_margin"]}mm; padding-right: {DEFAULT_SETTINGS["right_margin"]}mm;
     padding-bottom: {DEFAULT_SETTINGS["bottom_margin"]}mm; padding-left: {DEFAULT_SETTINGS["left_margin"]}mm;
@@ -422,37 +422,43 @@ output_dir = Path("outputs")
 input_dir.mkdir(exist_ok=True)
 output_dir.mkdir(exist_ok=True)
 
-main_col, settings_col = st.columns([2.0, 1.3], gap="medium")
+# Басты бағандардың енін теңгеру (Құжат алдын ала қарау және Баптаулар)
+main_col, settings_col = st.columns([1.4, 1.8], gap="large")
 
 with settings_col:
-    st.markdown(f'<div class="title-subtitle">{t["title_settings"]}</div>', unsafe_allow_html=True)
+    # Баптаулар блогын екі бағанға бөлу: Сол жақ - Титулка, Оң жақ - Сандық талаптар
+    title_col, metrics_col = st.columns([1, 1], gap="medium")
+    
+    with title_col:
+        st.markdown(f'<div class="title-subtitle">{t["title_settings"]}</div>', unsafe_allow_html=True)
 
-    try:
-        default_index = t["doc_types"].index(st.session_state["document_type"])
-    except ValueError:
-        default_index = 0
+        try:
+            default_index = t["doc_types"].index(st.session_state["document_type"])
+        except ValueError:
+            default_index = 0
 
-    document_type = st.selectbox(t["document_type"], options=t["doc_types"], index=default_index, key="document_type")
+        document_type = st.selectbox(t["document_type"], options=t["doc_types"], index=default_index, key="document_type")
 
-    title_topic = st.text_input(t["topic"], key="title_topic")
-    title_author = st.text_input(t["author"], key="title_author")
-    title_advisor = st.text_input(t["advisor"], key="title_advisor")
-    title_head = st.text_input(t["head"], key="title_head")
-    title_consultants = st.text_input(t["consultant"], key="title_consultants")
-    title_control = st.text_input(t["control"], key="title_control")
-    title_reviewer = st.text_input(t["reviewer"], key="title_reviewer")
-    title_code = st.text_input(t["code"], key="title_code")
-    title_year = st.text_input(t["year"], key="title_year")
+        title_topic = st.text_input(t["topic"], key="title_topic")
+        title_author = st.text_input(t["author"], key="title_author")
+        title_advisor = st.text_input(t["advisor"], key="title_advisor")
+        title_head = st.text_input(t["head"], key="title_head")
+        title_consultants = st.text_input(t["consultant"], key="title_consultants")
+        title_control = st.text_input(t["control"], key="title_control")
+        title_reviewer = st.text_input(t["reviewer"], key="title_reviewer")
+        title_code = st.text_input(t["code"], key="title_code")
+        title_year = st.text_input(t["year"], key="title_year")
 
-    st.markdown(f'<div class="right-title">{t["settings_title"]}</div>', unsafe_allow_html=True)
+    with metrics_col:
+        st.markdown(f'<div class="right-title">{t["settings_title"]}</div>', unsafe_allow_html=True)
 
-    font_size = st.number_input(t["font_size"], min_value=8, max_value=30, value=st.session_state["font_size"], step=1, key="font_size")
-    line_spacing = st.number_input(t["line_spacing"], min_value=1.0, max_value=3.0, value=st.session_state["line_spacing"], step=0.1, format="%.2f", key="line_spacing")
-    left_margin = st.number_input(t["left_margin"], min_value=0, max_value=50, value=st.session_state["left_margin"], step=1, key="left_margin")
-    right_margin = st.number_input(t["right_margin"], min_value=0, max_value=50, value=st.session_state["right_margin"], step=1, key="right_margin")
-    top_margin = st.number_input(t["top_margin"], min_value=0, max_value=50, value=st.session_state["top_margin"], step=1, key="top_margin")
-    bottom_margin = st.number_input(t["bottom_margin"], min_value=0, max_value=50, value=st.session_state["bottom_margin"], step=1, key="bottom_margin")
-    first_line_indent = st.number_input(t["first_line_indent"], min_value=0.0, max_value=30.0, value=st.session_state["first_line_indent"], step=0.5, format="%.2f", key="first_line_indent")
+        font_size = st.number_input(t["font_size"], min_value=8, max_value=30, value=st.session_state["font_size"], step=1, key="font_size")
+        line_spacing = st.number_input(t["line_spacing"], min_value=1.0, max_value=3.0, value=st.session_state["line_spacing"], step=0.1, format="%.2f", key="line_spacing")
+        left_margin = st.number_input(t["left_margin"], min_value=0, max_value=50, value=st.session_state["left_margin"], step=1, key="left_margin")
+        right_margin = st.number_input(t["right_margin"], min_value=0, max_value=50, value=st.session_state["right_margin"], step=1, key="right_margin")
+        top_margin = st.number_input(t["top_margin"], min_value=0, max_value=50, value=st.session_state["top_margin"], step=1, key="top_margin")
+        bottom_margin = st.number_input(t["bottom_margin"], min_value=0, max_value=50, value=st.session_state["bottom_margin"], step=1, key="bottom_margin")
+        first_line_indent = st.number_input(t["first_line_indent"], min_value=0.0, max_value=30.0, value=st.session_state["first_line_indent"], step=0.5, format="%.2f", key="first_line_indent")
 
 current_settings = {
     "document_type": document_type,
@@ -515,7 +521,6 @@ with main_col:
         st.session_state["error_message"] = None
         st.session_state["preview_html"] = None
 
-        # Орындаған, жетекші, тақырып, шифр және жыл маңызды өрістер
         if not all([title_topic.strip(), title_author.strip(), title_advisor.strip(), title_code.strip(), title_year.strip()]):
             st.session_state["error_message"] = t["fill_required"]
         else:
@@ -535,7 +540,6 @@ with main_col:
                     if not template_path:
                         raise FileNotFoundError(f"Template not mapped for {document_type}")
 
-                    # Барлық жаңа өрістермен бірге сөздік құрастыру
                     replacements = {
                         "{{DOC_TYPE}}": document_type,
                         "{{TITLE}}": title_topic,
