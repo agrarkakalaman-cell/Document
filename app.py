@@ -9,9 +9,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 
 from utils.formatter import format_dissertation
 
-
 st.set_page_config(page_title="Киберқауіпсіздік кафедрасы", layout="wide")
-
 
 TEXTS = {
     "kk": {
@@ -22,6 +20,11 @@ TEXTS = {
         "document_type": "Құжат түрі",
         "topic": "Тақырыбы",
         "author": "Орындаған",
+        "head": "Кафедра меңгерушісі",
+        "advisor": "Ғылыми жетекші",
+        "consultant": "Консультант (бөлім)",
+        "control": "Нормоконтроль",
+        "reviewer": "Рецензент",
         "code": "Шифр",
         "year": "Жыл",
         "font_size": "Қаріп өлшемі",
@@ -44,7 +47,7 @@ TEXTS = {
         "logo_missing": "logo.png файлы табылмады",
         "preview_title": "Алдын ала қарау",
         "preview_empty": "DOCX",
-        "fill_required": "Титулка үшін тақырыбы, орындаған, шифр және жыл өрістерін толтырыңыз.",
+        "fill_required": "Титулка үшін Тақырыбы, Орындаған, Шифр, Жетекші және Жыл өрістерін толтырыңыз.",
         "doc_types": [
             "Дипломдық жұмыс",
             "Өндірістік практика есебі",
@@ -63,6 +66,11 @@ TEXTS = {
         "document_type": "Тип документа",
         "topic": "Тема",
         "author": "Выполнил(а)",
+        "head": "Заведующий кафедрой",
+        "advisor": "Руководитель",
+        "consultant": "Консультанты (раздел)",
+        "control": "Нормоконтроль",
+        "reviewer": "Рецензент",
         "code": "Шифр",
         "year": "Год",
         "font_size": "Размер шрифта",
@@ -85,7 +93,7 @@ TEXTS = {
         "logo_missing": "Файл logo.png не найден",
         "preview_title": "Предварительный просмотр",
         "preview_empty": "DOCX",
-        "fill_required": "Заполните поля: тема, выполнил(а), шифр и год.",
+        "fill_required": "Заполните поля: Тема, Выполнил(а), Шифр, Руководитель и Год.",
         "doc_types": [
             "Дипломная работа",
             "Отчет по производственной практике",
@@ -98,35 +106,22 @@ TEXTS = {
     },
 }
 
-
-# templates папкасына өзіңіз дайындаған DOCX титулкаларды салыңыз.
-# Әр шаблонның ішінде мына плейсхолдерлер болуы керек:
-# {{DOC_TYPE}}, {{TITLE}}, {{AUTHOR}}, {{CODE}}, {{YEAR}}
-#
-# Егер сіздің файл атауыңыз басқа болса, төмендегі жолдарды ғана өзгертіңіз.
 TEMPLATE_MAP = {
     "Дипломдық жұмыс": "templates/Diploma_kaz.docx",
     "Дипломная работа": "templates/Diploma_rus.docx",
-
     "Өндірістік практика есебі": "templates/Practic_kaz.docx",
     "Отчет по производственной практике": "templates/Practic_rus.docx",
-
     "Оқу практикасы есебі": "templates/Study_practic_kaz.docx",
     "Отчет по учебной практике": "templates/Study_practic_rus.docx",
-
     "Зертханалық жұмыс": "templates/Lab_kaz.docx",
     "Лабораторная работа": "templates/Lab_rus.docx",
-
     "Курстық жұмыс": "templates/Course_kaz.docx",
     "Курсовая работа": "templates/Course_rus.docx",
-
     "СӨЖ": "templates/SRO_kaz.docx",
     "СРО": "templates/SRO_rus.docx",
-
     "СОӨЖ": "templates/SRSP_kaz.docx",
     "СРСП": "templates/SRSP_rus.docx",
 }
-
 
 DEFAULT_SETTINGS = {
     "font_size": 14,
@@ -138,18 +133,27 @@ DEFAULT_SETTINGS = {
     "first_line_indent": 12.5,
 }
 
+if "lang" not in st.session_state:
+    st.session_state["lang"] = "kk"
+
+current_lang = st.session_state["lang"]
+t = TEXTS[current_lang]
 
 SESSION_DEFAULTS = {
-    "lang": "kk",
     "docx_path": None,
     "error_message": None,
     "uploader_key": 0,
     "last_settings": None,
     "processed_settings": None,
     "preview_html": None,
-    "document_type": "Дипломная работа",
+    "document_type": t["doc_types"][0],
     "title_topic": "",
     "title_author": "",
+    "title_head": "",
+    "title_advisor": "",
+    "title_consultants": "",
+    "title_control": "",
+    "title_reviewer": "",
     "title_code": "",
     "title_year": str(datetime.now().year),
 }
@@ -163,10 +167,6 @@ for key, value in DEFAULT_SETTINGS.items():
         st.session_state[key] = value
 
 
-current_lang = st.session_state["lang"]
-t = TEXTS[current_lang]
-
-
 def clear_all():
     st.session_state["docx_path"] = None
     st.session_state["error_message"] = None
@@ -178,9 +178,14 @@ def clear_all():
     for key, value in DEFAULT_SETTINGS.items():
         st.session_state[key] = value
 
-    st.session_state["document_type"] = "Дипломная работа"
+    st.session_state["document_type"] = t["doc_types"][0]
     st.session_state["title_topic"] = ""
     st.session_state["title_author"] = ""
+    st.session_state["title_head"] = ""
+    st.session_state["title_advisor"] = ""
+    st.session_state["title_consultants"] = ""
+    st.session_state["title_control"] = ""
+    st.session_state["title_reviewer"] = ""
     st.session_state["title_code"] = ""
     st.session_state["title_year"] = str(datetime.now().year)
 
@@ -201,7 +206,7 @@ def replace_placeholders_in_docx(doc: Document, replacements: dict):
             return
 
         for key, value in replacements.items():
-            text = text.replace(key, value)
+            text = text.replace(key, str(value))
 
         for run in paragraph.runs:
             run.text = ""
@@ -279,8 +284,8 @@ def get_docx_preview_html(docx_path, max_paragraphs=220):
                 alignment = "justify"
 
             html_parts.append(
-                    f"<p>{escape(text)}</p>"
-            )               
+                f'<p style="text-align: {alignment};">{escape(text)}</p>'
+            )                   
 
         if len(html_parts) >= max_paragraphs:
             break
@@ -327,9 +332,7 @@ def print_pdf_button(preview_html, button_text, disabled=False):
                             line-height: {st.session_state["line_spacing"]};
                             color: #000;
                         }}
-                        p {{
-                            margin: 0 0 10px 0;
-                        }}
+                        p {{ margin: 0 0 10px 0; }}
                     </style>
                 </head>
                 <body>${{html}}</body>
@@ -342,15 +345,8 @@ def print_pdf_button(preview_html, button_text, disabled=False):
         </script>
         <style>
             .pdf-print-btn {{
-                width: 100%;
-                height: 39px;
-                background: #eaf3ff;
-                color: black;
-                border: 1px solid #c8d3e1;
-                border-radius: 7px;
-                font-size: 14px;
-                cursor: pointer;
-                font-family: sans-serif;
+                width: 100%; height: 39px; background: #eaf3ff; color: black; border: 1px solid #c8d3e1;
+                border-radius: 7px; font-size: 14px; cursor: pointer; font-family: sans-serif;
             }}
         </style>
         """,
@@ -358,183 +354,38 @@ def print_pdf_button(preview_html, button_text, disabled=False):
     )
 
 
+# CSS Стильдер
 st.markdown(f"""
 <style>
-.block-container {{
-    padding-top: 34px;
-    padding-left: 34px;
-    padding-right: 34px;
-    max-width: 960px;
-}}
-
-.header-title {{
-    font-size: 24px;
-    font-weight: 700;
-    text-align: center;
-    margin-top: 20px;
-    margin-bottom: 14px;
-}}
-
-.description-text {{
-    font-size: 16px;
-    margin-bottom: 34px;
-}}
-
-.right-title {{
-    font-size: 18px;
-    line-height: 1.45;
-    margin-top: 0px;
-    margin-bottom: 18px;
-}}
-
-.title-subtitle {{
-    font-size: 16px;
-    font-weight: 700;
-    margin-top: 0px;
-    margin-bottom: 14px;
-}}
-
+.block-container {{ padding-top: 34px; padding-left: 34px; padding-right: 34px; max-width: 1050px; }}
+.header-title {{ font-size: 24px; font-weight: 700; text-align: center; margin-top: 20px; margin-bottom: 14px; }}
+.description-text {{ font-size: 16px; margin-bottom: 34px; }}
+.right-title {{ font-size: 18px; line-height: 1.45; margin-top: 15px; margin-bottom: 18px; font-weight: 600; border-top: 1px solid #eee; padding-top: 15px; }}
+.title-subtitle {{ font-size: 16px; font-weight: 700; margin-top: 0px; margin-bottom: 14px; }}
 .docx-preview {{
-    width: 100%;
-    height: 580px;
-    border: 5px solid #f1f3f6;
-    background-color: white;
-    box-sizing: border-box;
-    margin-top: 12px;
-    margin-bottom: 16px;
-    padding-top: {DEFAULT_SETTINGS["top_margin"]}mm;
-    padding-right: {DEFAULT_SETTINGS["right_margin"]}mm;
-    padding-bottom: {DEFAULT_SETTINGS["bottom_margin"]}mm;
-    padding-left: {DEFAULT_SETTINGS["left_margin"]}mm;
-    overflow-y: auto;
-    font-family: "Times New Roman", serif;
-    font-size: {DEFAULT_SETTINGS["font_size"]}pt;
-    line-height: {DEFAULT_SETTINGS["line_spacing"]};
-    color: black;
-    white-space: normal;
+    width: 100%; height: 680px; border: 5px solid #f1f3f6; background-color: white; box-sizing: border-box;
+    margin-top: 12px; margin-bottom: 16px;
+    padding-top: {DEFAULT_SETTINGS["top_margin"]}mm; padding-right: {DEFAULT_SETTINGS["right_margin"]}mm;
+    padding-bottom: {DEFAULT_SETTINGS["bottom_margin"]}mm; padding-left: {DEFAULT_SETTINGS["left_margin"]}mm;
+    overflow-y: auto; font-family: "Times New Roman", serif; font-size: {DEFAULT_SETTINGS["font_size"]}pt;
+    line-height: {DEFAULT_SETTINGS["line_spacing"]}; color: black; white-space: normal;
 }}
-
-.docx-preview-empty {{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #eef0f4;
-    font-size: 90px;
-    font-weight: 700;
-    padding: 0;
-}}
-
-div[data-testid="stNumberInput"] {{
-    margin-bottom: 18px;
-}}
-
-div[data-testid="stTextInput"] {{
-    margin-bottom: 12px;
-}}
-
-div[data-testid="stNumberInput"] label,
-div[data-testid="stTextInput"] label,
-div[data-testid="stSelectbox"] label {{
-    font-size: 14px;
-}}
-
-div[data-testid="stNumberInput"] input,
-div[data-testid="stTextInput"] input {{
-    background-color: #eaf3ff;
-}}
-
-div[data-testid="stFileUploader"] {{
-    width: 100%;
-    margin-bottom: 10px;
-}}
-
-div[data-testid="stFileUploader"] section {{
-    width: 100%;
-    padding: 0 !important;
-    border: 1px solid #c8d3e1 !important;
-    border-radius: 7px !important;
-    background: #eaf3ff !important;
-    min-height: 46px !important;
-}}
-
-div[data-testid="stFileUploaderDropzone"] {{
-    width: 100%;
-    padding: 0 !important;
-    border: none !important;
-    background: #eaf3ff !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px !important;
-}}
-
-[data-testid="stFileUploaderDropzoneInstructions"],
-[data-testid="stFileUploaderFile"],
-[data-testid="stFileUploaderFileData"],
-div[data-testid="stFileUploader"] small,
-[data-testid="stFileUploader"] section small,
-[data-testid="stFileUploader"] div small {{
-    display: none !important;
-}}
-
-div[data-testid="stFileUploader"] button {{
-    width: 100% !important;
-    height: 44px !important;
-    min-width: 100% !important;
-    background: #eaf3ff !important;
-    border: none !important;
-    color: transparent !important;
-    box-shadow: none !important;
-    position: relative;
-    margin: 0 !important;
-}}
-
-div[data-testid="stFileUploader"] button::after {{
-    color: black;
-    font-size: 14px;
-    font-weight: 600;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    white-space: nowrap;
-}}
-
-.stButton button,
-.stDownloadButton button {{
-    width: 100% !important;
-    height: 39px;
-    background-color: #eaf3ff !important;
-    color: black !important;
-    border: 1px solid #c8d3e1 !important;
-    border-radius: 7px !important;
-    font-weight: 400 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-}}
-
-.stButton button:hover,
-.stDownloadButton button:hover {{
-    border-color: #9fb5cc !important;
-}}
-
-@media screen and (max-width: 800px) {{
-    .block-container {{
-        padding-left: 14px;
-        padding-right: 14px;
-    }}
-
-    .docx-preview {{
-        height: 420px;
-    }}
-
-    .docx-preview-empty {{
-        font-size: 64px;
-    }}
-}}
+.docx-preview-empty {{ display: flex; align-items: center; justify-content: center; color: #eef0f4; font-size: 90px; font-weight: 700; padding: 0; }}
+div[data-testid="stNumberInput"] {{ margin-bottom: 14px; }}
+div[data-testid="stTextInput"] {{ margin-bottom: 10px; }}
+div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label, div[data-testid="stSelectbox"] label {{ font-size: 13px; font-weight: 500; }}
+div[data-testid="stNumberInput"] input, div[data-testid="stTextInput"] input {{ background-color: #eaf3ff; }}
+div[data-testid="stFileUploader"] {{ width: 100%; margin-bottom: 10px; }}
+div[data-testid="stFileUploader"] section {{ width: 100%; padding: 0 !important; border: 1px solid #c8d3e1 !important; border-radius: 7px !important; background: #eaf3ff !important; min-height: 46px !important; }}
+div[data-testid="stFileUploaderDropzone"] {{ width: 100%; padding: 0 !important; border: none !important; background: #eaf3ff !important; display: flex; align-items: center; justify-content: center; min-height: 44px !important; }}
+[data-testid="stFileUploaderDropzoneInstructions"], [data-testid="stFileUploaderFile"], [data-testid="stFileUploaderFileData"], div[data-testid="stFileUploader"] small, [data-testid="stFileUploader"] section small, [data-testid="stFileUploader"] div small {{ display: none !important; }}
+div[data-testid="stFileUploader"] button {{ width: 100% !important; height: 44px !important; min-width: 100% !important; background: #eaf3ff !important; border: none !important; color: transparent !important; box-shadow: none !important; position: relative; margin: 0 !important; }}
+div[data-testid="stFileUploader"] button::after {{ color: black; font-size: 14px; font-weight: 600; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); white-space: nowrap; }}
+.stButton button, .stDownloadButton button {{ width: 100% !important; height: 39px; background-color: #eaf3ff !important; color: black !important; border: 1px solid #c8d3e1 !important; border-radius: 7px !important; font-weight: 400 !important; margin: 0 !important; box-shadow: none !important; }}
+.stButton button:hover, .stDownloadButton button:hover {{ border-color: #9fb5cc !important; }}
+@media screen and (max-width: 800px) {{ .block-container {{ padding-left: 14px; padding-right: 14px; }} .docx-preview {{ height: 420px; }} .docx-preview-empty {{ font-size: 64px; }} }}
 </style>
 """, unsafe_allow_html=True)
-
 
 top_col_1, top_col_2, top_col_3 = st.columns([1, 4, 1], gap="medium")
 
@@ -547,10 +398,7 @@ with top_col_1:
         st.warning(t["logo_missing"])
 
 with top_col_2:
-    st.markdown(
-        f'<div class="header-title">{t["page_title"]}</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown(f'<div class="header-title">{t["page_title"]}</div>', unsafe_allow_html=True)
 
 with top_col_3:
     st.markdown('<div style="height:26px;"></div>', unsafe_allow_html=True)
@@ -564,83 +412,57 @@ with top_col_3:
     new_lang = "kk" if selected_language == "Қазақша" else "ru"
     if new_lang != st.session_state["lang"]:
         st.session_state["lang"] = new_lang
+        st.session_state["document_type"] = TEXTS[new_lang]["doc_types"][0]
         st.rerun()
 
-
-st.markdown(
-    f'<div class="description-text">{t["description"]}</div>',
-    unsafe_allow_html=True
-)
-
+st.markdown(f'<div class="description-text">{t["description"]}</div>', unsafe_allow_html=True)
 
 input_dir = Path("uploads")
 output_dir = Path("outputs")
 input_dir.mkdir(exist_ok=True)
 output_dir.mkdir(exist_ok=True)
 
-
-main_col, settings_col = st.columns([2.25, 1.1], gap="medium")
-
+main_col, settings_col = st.columns([2.0, 1.3], gap="medium")
 
 with settings_col:
     st.markdown(f'<div class="title-subtitle">{t["title_settings"]}</div>', unsafe_allow_html=True)
 
-    document_type = st.selectbox(
-        t["document_type"],
-        options=t["doc_types"],
-        index=t["doc_types"].index(st.session_state["document_type"]) if st.session_state["document_type"] in t["doc_types"] else 0,
-        key="document_type"
-    )
+    try:
+        default_index = t["doc_types"].index(st.session_state["document_type"])
+    except ValueError:
+        default_index = 0
+
+    document_type = st.selectbox(t["document_type"], options=t["doc_types"], index=default_index, key="document_type")
 
     title_topic = st.text_input(t["topic"], key="title_topic")
     title_author = st.text_input(t["author"], key="title_author")
+    title_advisor = st.text_input(t["advisor"], key="title_advisor")
+    title_head = st.text_input(t["head"], key="title_head")
+    title_consultants = st.text_input(t["consultant"], key="title_consultants")
+    title_control = st.text_input(t["control"], key="title_control")
+    title_reviewer = st.text_input(t["reviewer"], key="title_reviewer")
     title_code = st.text_input(t["code"], key="title_code")
     title_year = st.text_input(t["year"], key="title_year")
 
     st.markdown(f'<div class="right-title">{t["settings_title"]}</div>', unsafe_allow_html=True)
 
-    font_size = st.number_input(
-        t["font_size"], min_value=8, max_value=30,
-        value=st.session_state["font_size"], step=1, key="font_size"
-    )
-
-    line_spacing = st.number_input(
-        t["line_spacing"], min_value=1.0, max_value=3.0,
-        value=st.session_state["line_spacing"], step=0.1,
-        format="%.2f", key="line_spacing"
-    )
-
-    left_margin = st.number_input(
-        t["left_margin"], min_value=0, max_value=50,
-        value=st.session_state["left_margin"], step=1, key="left_margin"
-    )
-
-    right_margin = st.number_input(
-        t["right_margin"], min_value=0, max_value=50,
-        value=st.session_state["right_margin"], step=1, key="right_margin"
-    )
-
-    top_margin = st.number_input(
-        t["top_margin"], min_value=0, max_value=50,
-        value=st.session_state["top_margin"], step=1, key="top_margin"
-    )
-
-    bottom_margin = st.number_input(
-        t["bottom_margin"], min_value=0, max_value=50,
-        value=st.session_state["bottom_margin"], step=1, key="bottom_margin"
-    )
-
-    first_line_indent = st.number_input(
-        t["first_line_indent"], min_value=0.0, max_value=30.0,
-        value=st.session_state["first_line_indent"], step=0.5,
-        format="%.2f", key="first_line_indent"
-    )
-
+    font_size = st.number_input(t["font_size"], min_value=8, max_value=30, value=st.session_state["font_size"], step=1, key="font_size")
+    line_spacing = st.number_input(t["line_spacing"], min_value=1.0, max_value=3.0, value=st.session_state["line_spacing"], step=0.1, format="%.2f", key="line_spacing")
+    left_margin = st.number_input(t["left_margin"], min_value=0, max_value=50, value=st.session_state["left_margin"], step=1, key="left_margin")
+    right_margin = st.number_input(t["right_margin"], min_value=0, max_value=50, value=st.session_state["right_margin"], step=1, key="right_margin")
+    top_margin = st.number_input(t["top_margin"], min_value=0, max_value=50, value=st.session_state["top_margin"], step=1, key="top_margin")
+    bottom_margin = st.number_input(t["bottom_margin"], min_value=0, max_value=50, value=st.session_state["bottom_margin"], step=1, key="bottom_margin")
+    first_line_indent = st.number_input(t["first_line_indent"], min_value=0.0, max_value=30.0, value=st.session_state["first_line_indent"], step=0.5, format="%.2f", key="first_line_indent")
 
 current_settings = {
     "document_type": document_type,
     "title_topic": title_topic,
     "title_author": title_author,
+    "title_advisor": title_advisor,
+    "title_head": title_head,
+    "title_consultants": title_consultants,
+    "title_control": title_control,
+    "title_reviewer": title_reviewer,
     "title_code": title_code,
     "title_year": title_year,
     "font_size": font_size,
@@ -655,10 +477,6 @@ current_settings = {
 if st.session_state["last_settings"] is None:
     st.session_state["last_settings"] = current_settings
 
-if st.session_state["last_settings"] != current_settings:
-    st.session_state["last_settings"] = current_settings
-
-
 with main_col:
     uploaded_file = st.file_uploader(
         t["file_uploader_label"],
@@ -670,88 +488,63 @@ with main_col:
     if uploaded_file is None:
         file_status = t["upload_button"]
     else:
-        file_size_kb = uploaded_file.size / 1024
-        file_status = f"📄 {uploaded_file.name}   {file_size_kb:.1f} KB"
+        file_status = f"📄 {uploaded_file.name}   {uploaded_file.size / 1024:.1f} KB"
 
     file_status = file_status.replace("\\", "\\\\").replace('"', '\\"')
-
-    st.markdown(
-        f"""
-        <style>
-        div[data-testid="stFileUploader"] button::after {{
-            content: "{file_status}";
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown(f"<style>div[data-testid='stFileUploader'] button::after {{ content: '{file_status}'; }}</style>", unsafe_allow_html=True)
 
     button_col_1, button_col_2 = st.columns([1, 1], gap="medium")
 
-    input_path = None
-    formatted_docx_path = None
-    final_docx_path = None
-
+    input_path, formatted_docx_path, final_docx_path = None, None, None
     if uploaded_file is not None:
         input_path = input_dir / uploaded_file.name
         file_stem = Path(uploaded_file.name).stem
         formatted_docx_path = output_dir / f"formatted_{file_stem}.docx"
         final_docx_path = output_dir / f"final_{file_stem}.docx"
-
         with open(input_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
 
     with button_col_1:
-        process_clicked = st.button(
-            t["process_button"],
-            disabled=uploaded_file is None,
-            use_container_width=True
-        )
+        process_clicked = st.button(t["process_button"], disabled=uploaded_file is None, use_container_width=True)
 
     with button_col_2:
-        st.button(
-            t["clear_button"],
-            use_container_width=True,
-            on_click=clear_all
-        )
+        st.button(t["clear_button"], use_container_width=True, on_click=clear_all)
 
     if process_clicked and uploaded_file is not None:
         st.session_state["docx_path"] = None
         st.session_state["error_message"] = None
         st.session_state["preview_html"] = None
 
-        required_fields_filled = all([
-            title_topic.strip(),
-            title_author.strip(),
-            title_code.strip(),
-            title_year.strip(),
-        ])
-
-        if not required_fields_filled:
+        # Орындаған, жетекші, тақырып, шифр және жыл маңызды өрістер
+        if not all([title_topic.strip(), title_author.strip(), title_advisor.strip(), title_code.strip(), title_year.strip()]):
             st.session_state["error_message"] = t["fill_required"]
         else:
             try:
                 format_dissertation(
-                    input_path=input_path,
-                    output_path=formatted_docx_path,
-                    font_size=font_size,
-                    line_spacing=line_spacing,
-                    left_margin=left_margin,
-                    right_margin=right_margin,
-                    top_margin=top_margin,
-                    bottom_margin=bottom_margin,
+                    input_path=input_path, output_path=formatted_docx_path,
+                    font_size=font_size, line_spacing=line_spacing,
+                    left_margin=left_margin, right_margin=right_margin,
+                    top_margin=top_margin, bottom_margin=bottom_margin,
                     first_line_indent=first_line_indent
                 )
 
                 if not formatted_docx_path.exists():
                     st.session_state["error_message"] = t["processing_error"]
                 else:
-                    template_path = TEMPLATE_MAP[document_type]
+                    template_path = TEMPLATE_MAP.get(document_type)
+                    if not template_path:
+                        raise FileNotFoundError(f"Template not mapped for {document_type}")
 
+                    # Барлық жаңа өрістермен бірге сөздік құрастыру
                     replacements = {
                         "{{DOC_TYPE}}": document_type,
                         "{{TITLE}}": title_topic,
                         "{{AUTHOR}}": title_author,
+                        "{{ADVISOR}}": title_advisor,
+                        "{{HEAD}}": title_head,
+                        "{{CONSULTANT}}": title_consultants,
+                        "{{CONTROL}}": title_control,
+                        "{{REVIEWER}}": title_reviewer,
                         "{{CODE}}": title_code,
                         "{{YEAR}}": title_year,
                     }
@@ -774,23 +567,16 @@ with main_col:
     if st.session_state["error_message"]:
         st.error(st.session_state["error_message"])
 
-    st.markdown(
-        f'<div style="font-weight:700; text-align:center; margin-top:12px;">{t["preview_title"]}</div>',
-        unsafe_allow_html=True
-    )
-
+    st.markdown(f'<div style="font-weight:700; text-align:center; margin-top:12px;">{t["preview_title"]}</div>', unsafe_allow_html=True)
     show_docx_preview()
 
     download_col_1, download_col_2 = st.columns([1, 1], gap="medium")
-
     with download_col_1:
         if st.session_state["docx_path"]:
             ready_docx = Path(st.session_state["docx_path"])
-
             with open(ready_docx, "rb") as f:
                 st.download_button(
-                    label=t["download_word"],
-                    data=f.read(),
+                    label=t["download_word"], data=f.read(),
                     file_name=ready_docx.name,
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     use_container_width=True
@@ -799,14 +585,7 @@ with main_col:
             st.button(t["download_word"], disabled=True, use_container_width=True)
 
     with download_col_2:
-        print_pdf_button(
-            st.session_state.get("preview_html") or "",
-            t["download_pdf"],
-            disabled=not bool(st.session_state.get("preview_html"))
-        )
+        print_pdf_button(st.session_state.get("preview_html") or "", t["download_pdf"], disabled=not bool(st.session_state.get("preview_html")))
 
-    if (
-        st.session_state["docx_path"]
-        and st.session_state["processed_settings"] != current_settings
-    ):
+    if st.session_state["docx_path"] and st.session_state["processed_settings"] != current_settings:
         st.warning(t["changed_warning"])
